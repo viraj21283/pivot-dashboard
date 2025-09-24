@@ -66,6 +66,8 @@ st.title("Stock Pivots Calculator Dashboard")
 
 uploaded_file = st.file_uploader("Upload OHLC CSV or Excel File", type=["csv", "xlsx"])
 
+required_cols = {"Open", "High", "Low", "Close"}
+
 if uploaded_file:
     if uploaded_file.name.endswith(".csv"):
         df = pd.read_csv(uploaded_file)
@@ -79,96 +81,99 @@ if uploaded_file:
         "LOW_PRICE": "Low",
         "CLOSE_PRICE": "Close"
     })
-    st.write("Sample Input Data:", df.head())
 
-    classic_rows = []
-    fibonacci_rows = []
-    camarilla_rows = []
-    woodie_rows = []
-    demark_rows = []
+    # Check for required columns
+    if not required_cols.issubset(set(df.columns)):
+        st.error(f"Your file is missing some required columns: {required_cols}. Please ensure your file has columns named Open, High, Low, and Close, then re-upload.")
+    else:
+        classic_rows = []
+        fibonacci_rows = []
+        camarilla_rows = []
+        woodie_rows = []
+        demark_rows = []
 
-    for row in df.to_dict(orient='records'):
-        symbol = row.get("Symbol", "")
-        high = to_float(row.get("High"))
-        low = to_float(row.get("Low"))
-        close = to_float(row.get("Close"))
-        open_ = to_float(row.get("Open"), close)
-        prev_close = to_float(row.get("Previous Close"), close)
+        for row in df.to_dict(orient='records'):
+            symbol = row.get("Symbol", "")
+            high = to_float(row.get("High"))
+            low = to_float(row.get("Low"))
+            close = to_float(row.get("Close"))
+            open_ = to_float(row.get("Open"), close)
+            prev_close = to_float(row.get("Previous Close"), close)
 
-        try:
-            cpivot, cr1, cs1, cr2, cs2, cr3, cs3 = classic_pivots(high, low, close)
-            fpivot, fr1, fs1, fr2, fs2, fr3, fs3 = fibonacci_pivots(high, low, close)
-            cam_r1, cam_r2, cam_r3, cam_r4, cam_s1, cam_s2, cam_s3, cam_s4 = camarilla_pivots(high, low, close)
-            wpivot, wr1, ws1, wr2, ws2 = woodie_pivots(open_, high, low, close)
-            dpivot, dr1, ds1 = demark_pivots(open_, high, low, close)
+            try:
+                cpivot, cr1, cs1, cr2, cs2, cr3, cs3 = classic_pivots(high, low, close)
+                fpivot, fr1, fs1, fr2, fs2, fr3, fs3 = fibonacci_pivots(high, low, close)
+                cam_r1, cam_r2, cam_r3, cam_r4, cam_s1, cam_s2, cam_s3, cam_s4 = camarilla_pivots(high, low, close)
+                wpivot, wr1, ws1, wr2, ws2 = woodie_pivots(open_, high, low, close)
+                dpivot, dr1, ds1 = demark_pivots(open_, high, low, close)
 
-            classic_rows.append({
-                "Symbol": symbol,
-                "Pivot": cpivot,
-                "R1": cr1, "S1": cs1, "R2": cr2, "S2": cs2, "R3": cr3, "S3": cs3,
-            })
-            fibonacci_rows.append({
-                "Symbol": symbol,
-                "Pivot": fpivot,
-                "R1": fr1, "S1": fs1, "R2": fr2, "S2": fs2, "R3": fr3, "S3": fs3,
-            })
-            camarilla_rows.append({
-                "Symbol": symbol,
-                "R1": cam_r1, "R2": cam_r2, "R3": cam_r3, "R4": cam_r4,
-                "S1": cam_s1, "S2": cam_s2, "S3": cam_s3, "S4": cam_s4,
-            })
-            woodie_rows.append({
-                "Symbol": symbol,
-                "Pivot": wpivot,
-                "R1": wr1, "S1": ws1, "R2": wr2, "S2": ws2,
-            })
-            demark_rows.append({
-                "Symbol": symbol,
-                "Pivot": dpivot,
-                "R1": dr1, "S1": ds1,
-            })
-        except Exception as e:
-            classic_rows.append({"Symbol": symbol, "Error": str(e)})
-            fibonacci_rows.append({"Symbol": symbol, "Error": str(e)})
-            camarilla_rows.append({"Symbol": symbol, "Error": str(e)})
-            woodie_rows.append({"Symbol": symbol, "Error": str(e)})
-            demark_rows.append({"Symbol": symbol, "Error": str(e)})
+                classic_rows.append({
+                    "Symbol": symbol,
+                    "Pivot": cpivot,
+                    "R1": cr1, "S1": cs1, "R2": cr2, "S2": cs2, "R3": cr3, "S3": cs3,
+                })
+                fibonacci_rows.append({
+                    "Symbol": symbol,
+                    "Pivot": fpivot,
+                    "R1": fr1, "S1": fs1, "R2": fr2, "S2": fs2, "R3": fr3, "S3": fs3,
+                })
+                camarilla_rows.append({
+                    "Symbol": symbol,
+                    "R1": cam_r1, "R2": cam_r2, "R3": cam_r3, "R4": cam_r4,
+                    "S1": cam_s1, "S2": cam_s2, "S3": cam_s3, "S4": cam_s4,
+                })
+                woodie_rows.append({
+                    "Symbol": symbol,
+                    "Pivot": wpivot,
+                    "R1": wr1, "S1": ws1, "R2": wr2, "S2": ws2,
+                })
+                demark_rows.append({
+                    "Symbol": symbol,
+                    "Pivot": dpivot,
+                    "R1": dr1, "S1": ds1,
+                })
+            except Exception as e:
+                classic_rows.append({"Symbol": symbol, "Error": str(e)})
+                fibonacci_rows.append({"Symbol": symbol, "Error": str(e)})
+                camarilla_rows.append({"Symbol": symbol, "Error": str(e)})
+                woodie_rows.append({"Symbol": symbol, "Error": str(e)})
+                demark_rows.append({"Symbol": symbol, "Error": str(e)})
 
-    st.subheader("Classic Pivot Points")
-    st.write(pd.DataFrame(classic_rows))
+        st.subheader("Classic Pivot Points")
+        st.write(pd.DataFrame(classic_rows))
 
-    st.subheader("Fibonacci Pivot Points")
-    st.write(pd.DataFrame(fibonacci_rows))
+        st.subheader("Fibonacci Pivot Points")
+        st.write(pd.DataFrame(fibonacci_rows))
 
-    st.subheader("Camarilla Pivot Points")
-    st.write(pd.DataFrame(camarilla_rows))
+        st.subheader("Camarilla Pivot Points")
+        st.write(pd.DataFrame(camarilla_rows))
 
-    st.subheader("Woodie Pivot Points")
-    st.write(pd.DataFrame(woodie_rows))
+        st.subheader("Woodie Pivot Points")
+        st.write(pd.DataFrame(woodie_rows))
 
-    st.subheader("DeMark Pivot Points")
-    st.write(pd.DataFrame(demark_rows))
+        st.subheader("DeMark Pivot Points")
+        st.write(pd.DataFrame(demark_rows))
 
-    # Download CSV for all together merged table (not separate sheets)
-    merged_df = pd.concat([
-        pd.DataFrame(classic_rows).add_prefix('Classic_'),
-        pd.DataFrame(fibonacci_rows).add_prefix('Fibonacci_'),
-        pd.DataFrame(camarilla_rows).add_prefix('Camarilla_'),
-        pd.DataFrame(woodie_rows).add_prefix('Woodie_'),
-        pd.DataFrame(demark_rows).add_prefix('DeMark_')
-    ], axis=1)
-    st.download_button(
-        label="Download All Pivots CSV",
-        data=merged_df.to_csv(index=False),
-        file_name="pivot_output.csv",
-        mime="text/csv"
-    )
+        merged_df = pd.concat([
+            pd.DataFrame(classic_rows).add_prefix('Classic_'),
+            pd.DataFrame(fibonacci_rows).add_prefix('Fibonacci_'),
+            pd.DataFrame(camarilla_rows).add_prefix('Camarilla_'),
+            pd.DataFrame(woodie_rows).add_prefix('Woodie_'),
+            pd.DataFrame(demark_rows).add_prefix('DeMark_')
+        ], axis=1)
+        st.download_button(
+            label="Download All Pivots CSV",
+            data=merged_df.to_csv(index=False),
+            file_name="pivot_output.csv",
+            mime="text/csv"
+        )
 else:
-    st.info("Please upload a CSV or Excel file with stock OHLC data.")
+    st.info("Please upload a CSV or Excel file with columns: Open, High, Low, Close.")
 
 st.markdown("""
-- Supported columns on upload: SYMBOL, PREV_CL_PR, OPEN_PRICE, HIGH_PRICE, LOW_PRICE, CLOSE_PRICE
-- Mapped internally to: Symbol, Previous Close, Open, High, Low, Close
+- Required columns: Open, High, Low, Close
+- You may also provide: Symbol, Previous Close
+- If file headings do not match, you will be prompted to fix and re-upload.
 - All pivots: Classic, Fibonacci, Camarilla, Woodie, DeMark.
 """)
 
