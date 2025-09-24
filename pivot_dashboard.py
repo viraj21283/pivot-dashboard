@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import io
 
 def to_float(val, fallback=0.0):
     try:
@@ -154,18 +155,20 @@ if uploaded_file:
         st.subheader("DeMark Pivot Points")
         st.write(pd.DataFrame(demark_rows))
 
-        merged_df = pd.concat([
-            pd.DataFrame(classic_rows).add_prefix('Classic_'),
-            pd.DataFrame(fibonacci_rows).add_prefix('Fibonacci_'),
-            pd.DataFrame(camarilla_rows).add_prefix('Camarilla_'),
-            pd.DataFrame(woodie_rows).add_prefix('Woodie_'),
-            pd.DataFrame(demark_rows).add_prefix('DeMark_')
-        ], axis=1)
+        # Excel download as multiple sheets
+        output = io.BytesIO()
+        with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+            pd.DataFrame(classic_rows).to_excel(writer, sheet_name='Classic', index=False)
+            pd.DataFrame(fibonacci_rows).to_excel(writer, sheet_name='Fibonacci', index=False)
+            pd.DataFrame(camarilla_rows).to_excel(writer, sheet_name='Camarilla', index=False)
+            pd.DataFrame(woodie_rows).to_excel(writer, sheet_name='Woodie', index=False)
+            pd.DataFrame(demark_rows).to_excel(writer, sheet_name='DeMark', index=False)
+        excel_data = output.getvalue()
         st.download_button(
-            label="Download All Pivots CSV",
-            data=merged_df.to_csv(index=False),
-            file_name="pivot_output.csv",
-            mime="text/csv"
+            label="Download All Pivots Excel",
+            data=excel_data,
+            file_name="pivot_output.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
 else:
     st.info("Please upload a CSV or Excel file with columns: Open, High, Low, Close.")
