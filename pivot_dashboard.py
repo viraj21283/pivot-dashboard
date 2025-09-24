@@ -1,6 +1,15 @@
 import streamlit as st
 import pandas as pd
 
+# Helper for safe float conversion
+def to_float(val, fallback=0.0):
+    try:
+        if pd.isna(val) or val is None or val == "":
+            return fallback
+        return float(val)
+    except:
+        return fallback
+
 def classic_pivots(high, low, close):
     pivot = (high + low + close) / 3
     r1 = (2 * pivot) - low
@@ -56,18 +65,12 @@ def demark_pivots(open_, high, low, close):
 
 def calculate_all(row):
     symbol = row.get("Symbol", "")
-    high = row.get("High", None)
-    low = row.get("Low", None)
-    close = row.get("Close", None)
-    open_ = row.get("Open", close)
-    prev_close = row.get("Previous Close", close)
+    high = to_float(row.get("High"))
+    low = to_float(row.get("Low"))
+    close = to_float(row.get("Close"))
+    open_ = to_float(row.get("Open"), close)
+    prev_close = to_float(row.get("Previous Close"), close)
     try:
-        high = float(high)
-        low = float(low)
-        close = float(close)
-        open_ = float(open_) if open_ is not None else close
-        prev_close = float(prev_close) if prev_close is not None else close
-
         cpivot, cr1, cs1, cr2, cs2, cr3, cs3 = classic_pivots(high, low, close)
         fr1, fs1, fr2, fs2, fr3, fs3 = fibonacci_pivots(high, low, close)
         cam_r1, cam_r2, cam_r3, cam_r4, cam_s1, cam_s2, cam_s3, cam_s4 = camarilla_pivots(high, low, close)
@@ -96,6 +99,17 @@ if uploaded_file:
         df = pd.read_csv(uploaded_file)
     else:
         df = pd.read_excel(uploaded_file)
+
+    # Map your column names to internal names
+    df = df.rename(columns={
+        "SYMBOL": "Symbol",
+        "PREV_CL_PR": "Previous Close",
+        "OPEN_PRICE": "Open",
+        "HIGH_PRICE": "High",
+        "LOW_PRICE": "Low",
+        "CLOSE_PRICE": "Close"
+    })
+
     st.write("Sample Input Data:", df.head())
 
     output_rows = [calculate_all(row) for row in df.to_dict(orient='records')]
@@ -118,8 +132,8 @@ else:
     st.info("Please upload a CSV or Excel file with stock OHLC data.")
 
 st.markdown("""
-- Supported columns: Symbol, Open, High, Low, Close, Previous Close.
-- Handles any combination: OHLC, HLC, or with Previous Close.
+- Supported columns: Symbol, Open, High, Low, Close, Previous Close
+- Handles typical NSE/BSE daily stock download files automatically.
 - All pivots: Classic, Fibonacci, Camarilla, Woodie, DeMark.
 """)
 
