@@ -117,12 +117,6 @@ if uploaded_file:
     st.write("Calculated Pivots:", output_df)
 
     st.download_button(
-        label="Download Results Excel",
-        data=output_df.to_excel(index=False, engine='xlsxwriter'),
-        file_name="pivot_output.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    )
-    st.download_button(
         label="Download Results CSV",
         data=output_df.to_csv(index=False),
         file_name="pivot_output.csv",
@@ -132,8 +126,8 @@ else:
     st.info("Please upload a CSV or Excel file with stock OHLC data.")
 
 st.markdown("""
-- Supported columns: Symbol, Open, High, Low, Close, Previous Close
-- Handles typical NSE/BSE daily stock download files automatically.
+- Supported columns on upload: SYMBOL, PREV_CL_PR, OPEN_PRICE, HIGH_PRICE, LOW_PRICE, CLOSE_PRICE
+- Mapped internally to: Symbol, Previous Close, Open, High, Low, Close
 - All pivots: Classic, Fibonacci, Camarilla, Woodie, DeMark.
 """)
 
