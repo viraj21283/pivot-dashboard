@@ -71,8 +71,6 @@ if uploaded_file:
         df = pd.read_csv(uploaded_file)
     else:
         df = pd.read_excel(uploaded_file)
-
-    # Map your column names to internal names
     df = df.rename(columns={
         "SYMBOL": "Symbol",
         "PREV_CL_PR": "Previous Close",
@@ -99,7 +97,7 @@ if uploaded_file:
 
         try:
             cpivot, cr1, cs1, cr2, cs2, cr3, cs3 = classic_pivots(high, low, close)
-            fr_pivot, fr1, fs1, fr2, fs2, fr3, fs3 = (cpivot,) + fibonacci_pivots(high, low, close)
+            fpivot, fr1, fs1, fr2, fs2, fr3, fs3 = fibonacci_pivots(high, low, close)
             cam_r1, cam_r2, cam_r3, cam_r4, cam_s1, cam_s2, cam_s3, cam_s4 = camarilla_pivots(high, low, close)
             wpivot, wr1, ws1, wr2, ws2 = woodie_pivots(open_, high, low, close)
             dpivot, dr1, ds1 = demark_pivots(open_, high, low, close)
@@ -111,7 +109,7 @@ if uploaded_file:
             })
             fibonacci_rows.append({
                 "Symbol": symbol,
-                "Pivot": fr_pivot,
+                "Pivot": fpivot,
                 "R1": fr1, "S1": fs1, "R2": fr2, "S2": fs2, "R3": fr3, "S3": fs3,
             })
             camarilla_rows.append({
@@ -130,13 +128,11 @@ if uploaded_file:
                 "R1": dr1, "S1": ds1,
             })
         except Exception as e:
-            # Error rows
-            err_row = {"Symbol": symbol, "Error": str(e)}
-            classic_rows.append(err_row)
-            fibonacci_rows.append(err_row)
-            camarilla_rows.append(err_row)
-            woodie_rows.append(err_row)
-            demark_rows.append(err_row)
+            classic_rows.append({"Symbol": symbol, "Error": str(e)})
+            fibonacci_rows.append({"Symbol": symbol, "Error": str(e)})
+            camarilla_rows.append({"Symbol": symbol, "Error": str(e)})
+            woodie_rows.append({"Symbol": symbol, "Error": str(e)})
+            demark_rows.append({"Symbol": symbol, "Error": str(e)})
 
     st.subheader("Classic Pivot Points")
     st.write(pd.DataFrame(classic_rows))
@@ -153,17 +149,17 @@ if uploaded_file:
     st.subheader("DeMark Pivot Points")
     st.write(pd.DataFrame(demark_rows))
 
-    # Download CSV for all together as separate sheets merged (optional)
-    combined_df = pd.concat([
-        pd.DataFrame(classic_rows),
-        pd.DataFrame(fibonacci_rows),
-        pd.DataFrame(camarilla_rows),
-        pd.DataFrame(woodie_rows),
-        pd.DataFrame(demark_rows)
+    # Download CSV for all together merged table (not separate sheets)
+    merged_df = pd.concat([
+        pd.DataFrame(classic_rows).add_prefix('Classic_'),
+        pd.DataFrame(fibonacci_rows).add_prefix('Fibonacci_'),
+        pd.DataFrame(camarilla_rows).add_prefix('Camarilla_'),
+        pd.DataFrame(woodie_rows).add_prefix('Woodie_'),
+        pd.DataFrame(demark_rows).add_prefix('DeMark_')
     ], axis=1)
     st.download_button(
         label="Download All Pivots CSV",
-        data=combined_df.to_csv(index=False),
+        data=merged_df.to_csv(index=False),
         file_name="pivot_output.csv",
         mime="text/csv"
     )
